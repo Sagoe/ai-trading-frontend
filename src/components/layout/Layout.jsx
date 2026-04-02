@@ -1,18 +1,30 @@
+import { useState } from "react";
 import Sidebar    from "./Sidebar";
 import Topbar     from "./Topbar";
 import LiveTicker from "./LiveTicker";
 
 export default function Layout({ children, onRefresh }) {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
   return (
     <div className="min-h-screen bg-bg-primary">
-      <Sidebar />
-      {/* LiveTicker sits at the very top above Topbar */}
+      {/* Mobile overlay */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/60 z-30 md:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+
       <LiveTicker />
-      {/* Topbar is pushed down by ticker height (h-10 = 40px) */}
-      <div className="ml-60 pt-10">
-        <Topbar onRefresh={onRefresh} />
-        <main className="pt-14 min-h-screen">
-          <div className="p-6 max-w-[1600px] mx-auto animate-fade-in-up">
+
+      {/* md+ pushed right by sidebar */}
+      <div className="md:ml-60 pt-10">
+        <Topbar onRefresh={onRefresh} onMenuClick={() => setSidebarOpen(true)} />
+        <main className="pt-14 min-h-screen pb-20 md:pb-0">
+          <div className="p-4 md:p-6 max-w-[1600px] mx-auto animate-fade-in-up">
             {children}
           </div>
         </main>
