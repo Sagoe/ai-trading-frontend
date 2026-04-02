@@ -3,7 +3,7 @@ import react from "@vitejs/plugin-react";
 
 export default defineConfig({
   plugins: [react()],
-  base: "/",
+  // No base needed for Vercel — it serves from root
   build: {
     outDir: "dist",
   },

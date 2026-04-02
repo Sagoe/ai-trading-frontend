@@ -1,8 +1,10 @@
 import axios from "axios";
 
+// Production: Render backend
+// Development: Vite proxy to localhost:8000
 const BACKEND = import.meta.env.PROD
   ? "https://ai-trading-dashboard-sotg.onrender.com"
-  : "http://127.0.0.1:8000";
+  : "";
 
 const api = axios.create({
   baseURL: BACKEND,
@@ -36,7 +38,7 @@ export const uploadCSV = (file) => {
   form.append("file", file);
   return api.post("/upload/", form, {
     headers: { "Content-Type": "multipart/form-data" },
-    timeout: 120000,
+    timeout: 300000,
   });
 };
 
