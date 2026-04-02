@@ -12,14 +12,21 @@ class ErrorBoundary extends React.Component {
   static getDerivedStateFromError(error) {
     return { hasError: true, error };
   }
+  componentDidCatch(error, info) {
+    console.error("React Error:", error, info);
+  }
   render() {
     if (this.state.hasError) {
       return (
-        <div style={{ color: "white", background: "#0a0e1a", padding: "2rem", fontFamily: "monospace" }}>
-          <h2 style={{ color: "#ff3b5c" }}>App Error</h2>
+        <div style={{
+          color: "white", background: "#0a0e1a",
+          padding: "2rem", fontFamily: "monospace", minHeight: "100vh"
+        }}>
+          <h2 style={{ color: "#ff3b5c" }}>⚠ App crashed</h2>
           <pre style={{ color: "#00d4ff", fontSize: "12px", whiteSpace: "pre-wrap" }}>
             {this.state.error?.toString()}
-            {"\n"}
+          </pre>
+          <pre style={{ color: "#8899aa", fontSize: "11px", whiteSpace: "pre-wrap" }}>
             {this.state.error?.stack}
           </pre>
         </div>
@@ -32,7 +39,7 @@ class ErrorBoundary extends React.Component {
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <ErrorBoundary>
-      <BrowserRouter basename="/">
+      <BrowserRouter>
         <App />
       </BrowserRouter>
     </ErrorBoundary>
