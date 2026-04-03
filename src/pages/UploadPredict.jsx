@@ -68,7 +68,7 @@ export default function UploadPredict() {
     try {
       const form = new FormData();
       form.append("file", file);
-      const res = await axios.post("/upload/", form, {
+      const res = await axios.post("https://ai-trading-dashboard-sotg.onrender.com/upload/", form, {
         headers: { "Content-Type": "multipart/form-data" },
         timeout: 120000,
       });
