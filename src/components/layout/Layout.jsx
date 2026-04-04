@@ -7,7 +7,7 @@ export default function Layout({ children, onRefresh }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-bg-primary">
+    <div className="min-h-screen bg-bg-primary overflow-x-hidden">
       {/* Mobile overlay */}
       {sidebarOpen && (
         <div
@@ -20,11 +20,10 @@ export default function Layout({ children, onRefresh }) {
 
       <LiveTicker />
 
-      {/* md+ pushed right by sidebar */}
-      <div className="md:ml-60 pt-10">
+      <div className="md:ml-60 pt-10 overflow-x-hidden">
         <Topbar onRefresh={onRefresh} onMenuClick={() => setSidebarOpen(true)} />
-        <main className="pt-14 min-h-screen pb-20 md:pb-0">
-          <div className="p-4 md:p-6 max-w-[1600px] mx-auto animate-fade-in-up">
+        <main className="pt-14 min-h-screen">
+          <div className="p-3 md:p-6 max-w-[1600px] mx-auto animate-fade-in-up overflow-x-hidden">
             {children}
           </div>
         </main>

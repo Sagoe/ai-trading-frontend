@@ -39,32 +39,6 @@ export default function Sidebar({ open, onClose }) {
       )}>
         <SidebarContent activeSymbol={activeSymbol} onClose={onClose} showClose />
       </aside>
-
-      {/* Mobile bottom nav */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40
-                      bg-bg-secondary border-t border-border
-                      flex items-center justify-around px-2 py-2">
-        {NAV.slice(0, 5).map(({ to, icon: Icon, label }) => (
-          <NavLink
-            key={to}
-            to={to}
-            end={to === "/"}
-            className={({ isActive }) =>
-              clsx(
-                "flex flex-col items-center gap-0.5 px-2 py-1 rounded-lg text-[10px] transition-all",
-                isActive ? "text-accent-cyan" : "text-text-muted"
-              )
-            }
-          >
-            {({ isActive }) => (
-              <>
-                <Icon size={18} className={isActive ? "text-accent-cyan" : "text-text-muted"} />
-                <span>{label}</span>
-              </>
-            )}
-          </NavLink>
-        ))}
-      </nav>
     </>
   );
 }
