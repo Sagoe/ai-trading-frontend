@@ -13,15 +13,11 @@ import {
 } from "../components/ui";
 import { useHistory, usePrediction, useSentiment, useStockPrice } from "../hooks/useData";
 import { useStore } from "../store/useStore";
-import { getStockPrice } from "../utils/api";
-import axios from "axios";
+import { getStockPrice, uploadCSV } from "../utils/api";
 
-const REFRESH_MS  = 300000;
-const BACKEND_URL = import.meta.env.PROD
-  ? "https://ai-trading-dashboard-sotg.onrender.com"
-  : "";
+const REFRESH_MS = 300000;
 
-// ── Live stat card with auto-refresh ─────────────────────
+// ── Live stat card with auto-refresh ──────────────────────
 function LiveStatCard({ label, icon: Icon, accent, getValue, formatValue, sub }) {
   const [val, setVal]     = useState(null);
   const [flash, setFlash] = useState(false);
@@ -74,7 +70,7 @@ function LiveStatCard({ label, icon: Icon, accent, getValue, formatValue, sub })
   );
 }
 
-// ── Upload Panel ──────────────────────────────────────────
+// ── Upload Panel ───────────────────────────────────────────
 function UploadPanel({ onResult, onClear, hasResult }) {
   const [dragging, setDragging] = useState(false);
   const [file, setFile]         = useState(null);
@@ -93,16 +89,10 @@ function UploadPanel({ onResult, onClear, hasResult }) {
     if (!file) return;
     setLoading(true); setError(null);
     try {
-      const form = new FormData();
-      form.append("file", file);
-      const uploadUrl = `${BACKEND_URL}/upload/`;
-      const res = await axios.post(uploadUrl, form, {
-        headers: { "Content-Type": "multipart/form-data" },
-        timeout: 120000,
-      });
-      onResult(res.data);
+      const data = await uploadCSV(file);
+      onResult(data);
     } catch (e) {
-      setError(e?.response?.data?.detail || e.message || "Upload failed");
+      setError(typeof e === "string" ? e : e?.message || "Upload failed");
     } finally {
       setLoading(false);
     }
@@ -162,7 +152,7 @@ function UploadPanel({ onResult, onClear, hasResult }) {
   );
 }
 
-// ── Upload Results ────────────────────────────────────────
+// ── Upload Results ─────────────────────────────────────────
 function UploadResults({ result }) {
   const signal = result?.signal;
   const s      = result?.summary || {};
@@ -183,10 +173,10 @@ function UploadResults({ result }) {
       {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
         {[
-          { label: "Last Close",   val: `$${result.current_price}`,  accent: "cyan" },
-          { label: "Min",          val: `$${s.min}`,                  accent: "yellow" },
-          { label: "Max",          val: `$${s.max}`,                  accent: "yellow" },
-          { label: "Average",      val: `$${s.mean}`,                 accent: "cyan" },
+          { label: "Last Close",    val: `$${result.current_price}`, accent: "cyan" },
+          { label: "Min",           val: `$${s.min}`,                accent: "yellow" },
+          { label: "Max",           val: `$${s.max}`,                accent: "yellow" },
+          { label: "Average",       val: `$${s.mean}`,               accent: "cyan" },
           { label: "Total Return",
             val: `${(s.return_total_pct ?? 0) >= 0 ? "+" : ""}${s.return_total_pct}%`,
             accent: (s.return_total_pct ?? 0) >= 0 ? "green" : "red" },
@@ -197,9 +187,9 @@ function UploadResults({ result }) {
           <div key={label} className="card text-center py-3">
             <p className="text-text-muted text-[10px] font-mono uppercase tracking-wider mb-1">{label}</p>
             <p className={`font-display font-bold text-sm ${
-              accent === "cyan"   ? "text-accent-cyan"
-            : accent === "green"  ? "text-accent-green"
-            : accent === "red"    ? "text-accent-red"
+              accent === "cyan"  ? "text-accent-cyan"
+            : accent === "green" ? "text-accent-green"
+            : accent === "red"   ? "text-accent-red"
             : "text-accent-yellow"}`}>{val}</p>
           </div>
         ))}
@@ -225,7 +215,7 @@ function UploadResults({ result }) {
         <table className="w-full text-xs font-mono">
           <thead>
             <tr className="text-text-muted border-b border-border text-left">
-              {["Period","Ensemble","ARIMA","SVR","vs Last Close"].map(h => (
+              {["Period", "Ensemble", "ARIMA", "SVR", "vs Last Close"].map(h => (
                 <th key={h} className="py-2 px-3 font-normal">{h}</th>
               ))}
             </tr>
@@ -238,7 +228,7 @@ function UploadResults({ result }) {
                 <tr key={date} className="border-b border-border/40 hover:bg-bg-hover">
                   <td className="py-2 px-3 text-text-muted">{date}</td>
                   <td className="py-2 px-3 text-accent-green font-semibold">{ens ? `$${ens}` : "—"}</td>
-                  <td className="py-2 px-3 text-accent-purple">{fc.arima?.[i] ? `$${fc.arima[i]}` : "—"}</td>
+                  <td className="py-2 px-3 text-accent-cyan">{fc.arima?.[i] ? `$${fc.arima[i]}` : "—"}</td>
                   <td className="py-2 px-3 text-accent-red">{fc.svr?.[i] ? `$${fc.svr[i]}` : "—"}</td>
                   <td className={`py-2 px-3 font-semibold ${diff >= 0 ? "text-accent-green" : "text-accent-red"}`}>
                     {diff !== null ? `${diff >= 0 ? "+" : ""}${diff.toFixed(2)}%` : "—"}
@@ -252,11 +242,11 @@ function UploadResults({ result }) {
 
       {/* Model metrics */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {["arima","svr"].map((m) => (
+        {["arima", "svr"].map((m) => (
           <div key={m} className="card">
             <SectionHeader title={`${m.toUpperCase()} Metrics`} />
             <div className="grid grid-cols-4 gap-2">
-              {["rmse","mae","r2","mape"].map((k) => (
+              {["rmse", "mae", "r2", "mape"].map((k) => (
                 <div key={k} className="bg-bg-secondary rounded-lg p-2 text-center border border-border">
                   <p className="text-text-muted text-[10px] font-mono uppercase">{k}</p>
                   <p className="font-mono text-accent-cyan text-sm font-bold mt-1">
@@ -273,7 +263,7 @@ function UploadResults({ result }) {
   );
 }
 
-// ── Main Dashboard ────────────────────────────────────────
+// ── Main Dashboard ─────────────────────────────────────────
 export default function Dashboard() {
   const symbol = useStore((s) => s.activeSymbol);
   const [period, setPeriod]             = useState("1y");
