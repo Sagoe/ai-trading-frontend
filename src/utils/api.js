@@ -1,14 +1,12 @@
 import axios from "axios";
 
-// Production: Render backend
-// Development: Vite proxy to localhost:8000
 const BACKEND = import.meta.env.PROD
   ? "https://ai-trading-dashboard-sotg.onrender.com"
   : "";
 
 const api = axios.create({
   baseURL: BACKEND,
-  timeout: 30000,
+  timeout: 60000, // 60s for regular calls
 });
 
 api.interceptors.response.use(
@@ -36,9 +34,9 @@ export const removePosition = (sym)  => api.delete(`/portfolio/${sym}`);
 export const uploadCSV = (file) => {
   const form = new FormData();
   form.append("file", file);
-  return api.post("/upload/", form, {
+  return api.post("/upload", form, {
     headers: { "Content-Type": "multipart/form-data" },
-    timeout: 300000,
+    timeout: 300000, // 5 min for ML analysis
   });
 };
 

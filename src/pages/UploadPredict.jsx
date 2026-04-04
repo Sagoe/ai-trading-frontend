@@ -1,10 +1,10 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef } from "react";
 import Layout from "../components/layout/Layout";
 import ForecastChart from "../components/charts/ForecastChart";
 import PriceChart from "../components/charts/PriceChart";
 import { SignalBadge, SectionHeader, ErrorBox, SentimentGauge } from "../components/ui";
-import { Upload, FileText, TrendingUp, BarChart2, Activity, AlertCircle, CheckCircle, X } from "lucide-react";
-import axios from "axios";
+import { Upload, FileText, TrendingUp, BarChart2, AlertCircle, CheckCircle, X } from "lucide-react";
+import { uploadCSV } from "../utils/api";
 
 function StatBox({ label, value, accent = "cyan" }) {
   const colors = {
@@ -33,15 +33,14 @@ function MetricBox({ label, value }) {
 }
 
 export default function UploadPredict() {
-  const [dragging, setDragging]   = useState(false);
-  const [file, setFile]           = useState(null);
-  const [loading, setLoading]     = useState(false);
-  const [result, setResult]       = useState(null);
-  const [error, setError]         = useState(null);
-  const inputRef                  = useRef();
+  const [dragging, setDragging] = useState(false);
+  const [file, setFile]         = useState(null);
+  const [loading, setLoading]   = useState(false);
+  const [result, setResult]     = useState(null);
+  const [error, setError]       = useState(null);
+  const inputRef                = useRef();
 
-  // ── Drag & Drop ─────────────────────────────────────────
-  const onDragOver  = (e) => { e.preventDefault(); setDragging(true);  };
+  const onDragOver  = (e) => { e.preventDefault(); setDragging(true); };
   const onDragLeave = ()  => setDragging(false);
   const onDrop      = (e) => {
     e.preventDefault(); setDragging(false);
@@ -66,22 +65,19 @@ export default function UploadPredict() {
     setResult(null);
 
     try {
-      const form = new FormData();
-      form.append("file", file);
-      const res = await axios.post("https://ai-trading-dashboard-sotg.onrender.com/upload", form, {
-        headers: { "Content-Type": "multipart/form-data" },
-        timeout: 120000,
-      });
-      setResult(res.data);
+      const data = await uploadCSV(file);
+      setResult(data);
     } catch (e) {
-      setError(e?.response?.data?.detail || e.message || "Upload failed");
+      setError(typeof e === "string" ? e : e?.message || "Upload failed");
     } finally {
       setLoading(false);
     }
   }
 
   function reset() {
-    setFile(null); setResult(null); setError(null);
+    setFile(null);
+    setResult(null);
+    setError(null);
   }
 
   const signal = result?.signal;
@@ -196,7 +192,7 @@ export default function UploadPredict() {
 
       {error && <ErrorBox message={error} />}
 
-      {/* ── RESULTS ──────────────────────────────────────── */}
+      {/* RESULTS */}
       {result && (
         <div className="space-y-4 animate-fade-in-up">
 
@@ -223,11 +219,13 @@ export default function UploadPredict() {
             <StatBox label="Min Price"        value={`$${result.summary.min}`}                  accent="yellow" />
             <StatBox label="Max Price"        value={`$${result.summary.max}`}                  accent="yellow" />
             <StatBox label="Mean Price"       value={`$${result.summary.mean}`}                 accent="cyan"   />
-            <StatBox label="Total Return"
+            <StatBox
+              label="Total Return"
               value={`${result.summary.return_total_pct >= 0 ? "+" : ""}${result.summary.return_total_pct}%`}
               accent={result.summary.return_total_pct >= 0 ? "green" : "red"}
             />
-            <StatBox label="RSI"
+            <StatBox
+              label="RSI"
               value={result.rsi ?? "—"}
               accent={result.rsi > 70 ? "red" : result.rsi < 30 ? "green" : "yellow"}
             />
@@ -260,14 +258,14 @@ export default function UploadPredict() {
                   <tr className="text-text-muted border-b border-border text-left">
                     <th className="py-2 px-3 font-normal">Period</th>
                     <th className="py-2 px-3 font-normal text-accent-green">Ensemble</th>
-                    <th className="py-2 px-3 font-normal text-accent-purple">ARIMA</th>
+                    <th className="py-2 px-3 font-normal text-accent-cyan">ARIMA</th>
                     <th className="py-2 px-3 font-normal text-accent-red">SVR</th>
                     <th className="py-2 px-3 font-normal">vs Current</th>
                   </tr>
                 </thead>
                 <tbody>
                   {result.forecast.dates.map((date, i) => {
-                    const ens = result.forecast.ensemble[i];
+                    const ens  = result.forecast.ensemble[i];
                     const diff = ens ? ((ens - result.current_price) / result.current_price * 100) : null;
                     return (
                       <tr key={date} className="border-b border-border/40 hover:bg-bg-hover">
@@ -275,7 +273,7 @@ export default function UploadPredict() {
                         <td className="py-2 px-3 text-accent-green font-semibold">
                           {ens ? `$${ens}` : "—"}
                         </td>
-                        <td className="py-2 px-3 text-accent-purple">
+                        <td className="py-2 px-3 text-accent-cyan">
                           {result.forecast.arima[i] ? `$${result.forecast.arima[i]}` : "—"}
                         </td>
                         <td className="py-2 px-3 text-accent-red">
@@ -298,7 +296,7 @@ export default function UploadPredict() {
               <div key={m} className="card">
                 <SectionHeader title={`${m.toUpperCase()} Model Metrics`} />
                 <div className="grid grid-cols-4 gap-2">
-                  {["rmse","mae","r2","mape"].map((k) => (
+                  {["rmse", "mae", "r2", "mape"].map((k) => (
                     <MetricBox key={k} label={k.toUpperCase()} value={result.metrics?.[m]?.[k]} />
                   ))}
                 </div>
